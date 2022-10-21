@@ -1,15 +1,21 @@
 require("dotenv").config();
 const request = require('request')
 const moment = require('moment')
+const fs = require("fs");
+const path = require("path");
+const { stringify } = require("csv-stringify");
 
+const columnsResult = require("./utils/columns");
+
+// API URL
 const apiUrl = process.env.API_URL;
 
 const main = async () => {
   try {
-    /*
-    let answerFullHolidays = await getFullHolidays()
-    console.log("---- ", answerFullHolidays)
     
+    let answerFullHolidays = await getFullHolidays()
+    await buildCSV(answerFullHolidays)
+    /*
     let answerHolidaysforYear = await getHolidaysforCurrentYear()
     console.log("---- ", answerHolidaysforYear)
     
@@ -30,6 +36,37 @@ const main = async () => {
     */
    } catch (error) {
     console.log(`Catch error: ${error}`)
+  }
+}
+
+const buildCSV = async (resultArr) => {
+  try {
+    if(resultArr.length == 0){
+      return "Empty resultArray"
+    }
+
+    console.log("*** ", resultArr)
+    const columns = columnsResult(); //Columns for csv outputResult
+
+    // Output csv parsed
+    const writer = fs.createWriteStream("holidays.csv");
+    const stringifier = stringify({ header: true, columns: columns });
+  
+    resultArr.forEach(date => {
+      let newDate = date.split('-')
+      let day = newDate[2]
+      let month = newDate[1].length < 2 ? `0${newDate[1]}` : newDate[1]
+      let year = newDate[0].length < 2 ? `0${newDate[1]}` : newDate[0]
+
+      stringifier.write([date, year, month, day])
+    })
+
+    //write output csv
+    stringifier.pipe(writer)
+    console.log("Csv output done!")
+
+  } catch (error) {
+    console.log(`${error} -> Failed to buildCSV`)
   }
 }
 
